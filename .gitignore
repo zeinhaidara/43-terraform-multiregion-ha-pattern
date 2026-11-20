@@ -7,3 +7,6 @@ memory/
 *.tfstate.*
 *.tfplan
 crash.log
+
+# Lock file is committed only for example roots
+/.terraform.lock.hcl
