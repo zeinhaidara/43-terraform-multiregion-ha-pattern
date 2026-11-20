@@ -1,0 +1,9 @@
+memory/
+.env
+.vscode/
+.idea/
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
+crash.log
