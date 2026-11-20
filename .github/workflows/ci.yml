@@ -1,0 +1,46 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+env:
+  TF_VERSION: "1.15.8"
+  # sha256 of terraform_1.15.8_linux_amd64.zip from releases.hashicorp.com SHA256SUMS
+  TF_SHA256: "d25ce7b6902013ad905db3d2eab0be4cd905887fe88b81a6171b8d5503c31f3d"
+
+jobs:
+  terraform:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Install Terraform (sha256 checked)
+        run: |
+          set -euo pipefail
+          zip="terraform_${TF_VERSION}_linux_amd64.zip"
+          curl -sSfLo "$RUNNER_TEMP/$zip" "https://releases.hashicorp.com/terraform/${TF_VERSION}/${zip}"
+          echo "${TF_SHA256}  $RUNNER_TEMP/$zip" | sha256sum --check --strict
+          unzip -q "$RUNNER_TEMP/$zip" -d "$RUNNER_TEMP/tf"
+          echo "$RUNNER_TEMP/tf" >> "$GITHUB_PATH"
+
+      - run: terraform fmt -check -recursive
+
+      - name: Module validate and test (mocked provider)
+        run: |
+          set -euo pipefail
+          terraform init -backend=false -input=false
+          terraform validate
+          terraform test -no-color | tee "$RUNNER_TEMP/tftest.out"
+          # terraform test reports success with zero runs; require some.
+          grep -E 'Success! [1-9][0-9]* passed, 0 failed' "$RUNNER_TEMP/tftest.out"
+
+      - name: Example root validate (committed lock file)
+        working-directory: examples/basic
+        run: |
+          terraform init -backend=false -input=false -lockfile=readonly
+          terraform validate
