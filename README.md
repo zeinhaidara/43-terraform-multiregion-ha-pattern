@@ -22,6 +22,11 @@ A small Terraform module for the data and traffic layers of an
 > active-passive or active-active patterns for a stateful application
 > (including data replication).
 
+Why it matters: running in one region means a regional outage takes the
+application down with it. Replicating the data and moving traffic on a
+failed health check lets the secondary region take over without someone
+editing DNS by hand during the incident.
+
 ## The pattern
 
 ```mermaid
